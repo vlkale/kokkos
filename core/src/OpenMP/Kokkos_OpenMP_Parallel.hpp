@@ -235,6 +235,21 @@ class ParallelFor<FunctorType, Kokkos::MDRangePolicy<Traits...>,
     }
   }
 
+
+
+  template <class Policy>
+  typename std::enable_if_t<std::is_same<typename Policy::schedule_type::type,
+                                         Kokkos::Auto>::value>
+  execute_parallel() const {
+#pragma omp parallel for schedule(auto KOKKOS_OPENMP_OPTIONAL_CHUNK_SIZE) \
+    num_threads(OpenMP::impl_thread_pool_size())
+    KOKKOS_PRAGMA_IVDEP_IF_ENABLED
+    for (auto iwork = m_policy.begin(); iwork < m_policy.end(); ++iwork) {
+      iterate_type(m_mdr_policy, m_functor)(iwork);
+    }
+  }
+                 
+                      
  public:
   inline void execute() const {
     if (OpenMP::in_parallel()) {
@@ -289,6 +304,7 @@ class ParallelFor<FunctorType, Kokkos::MDRangePolicy<Traits...>,
       m_instance = arg_policy.space().impl_internal_space_instance();
     }
   }
+                 
   template <typename Policy, typename Functor>
   static int max_tile_size_product(const Policy&, const Functor&) {
     /**
