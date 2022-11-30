@@ -131,6 +131,19 @@ class ParallelFor<FunctorType, Kokkos::RangePolicy<Traits...>, Kokkos::OpenMP> {
       exec_work(m_functor, iwork);
     }
   }
+  
+  
+  template <class Policy>
+  std::enable_if_t<!std::is_same<typename Policy::schedule_type::type,
+                                 Kokkos::UDS>::value>
+  execute_parallel() const {
+#pragma omp parallel for schedule(uds nameOFUDS KOKKOS_OPENMP_OPTIONAL_CHUNK_SIZE) \
+    num_threads(OpenMP::impl_thread_pool_size())
+    KOKKOS_PRAGMA_IVDEP_IF_ENABLED
+    for (auto iwork = m_policy.begin(); iwork < m_policy.end(); ++iwork) {
+      exec_work(m_functor, iwork);
+    }
+  }
 
  public:
   inline void execute() const {
