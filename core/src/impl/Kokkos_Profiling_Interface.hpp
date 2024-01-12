@@ -128,12 +128,12 @@ static_assert(sizeof(EventSet) / sizeof(Kokkos_Tools_functionPointer) == 275,
               "sizeof EventSet has changed, this is an error on the part of a "
               "Kokkos developer");
 static_assert(sizeof(Kokkos_Tools_ToolSettings) / sizeof(bool) == 256,
-              "sizeof EventSet has changed, this is an error on the part of a "
+              "sizeof Tools Settings has changed, this is an error on the part of a "
               "Kokkos developer");
 static_assert(sizeof(Kokkos_Tools_ToolProgrammingInterface) /
                       sizeof(Kokkos_Tools_functionPointer) ==
                   32,
-              "sizeof EventSet has changed, this is an error on the part of a "
+              "sizeof Tool Programming Interface has changed, this is an error on the part of a "
               "Kokkos developer");
 
 using toolInvokedFenceFunction = Kokkos_Tools_toolInvokedFenceFunction;
