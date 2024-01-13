@@ -40,6 +40,7 @@ bool SerialInternal::is_initialized() { return m_is_initialized; }
 void SerialInternal::initialize() {
   if (is_initialized()) return;
 
+  Kokkos::Profiling::initialize();
   Impl::SharedAllocationRecord<void, void>::tracking_enable();
 
   m_is_initialized = true;
@@ -57,7 +58,8 @@ void SerialInternal::finalize() {
 
     m_thread_team_data.scratch_assign(nullptr, 0, 0, 0, 0, 0);
   }
-
+  
+  Kokkos::Profiling::finalize();
   m_is_initialized = false;
 }
 
