@@ -14,8 +14,8 @@
 //
 //@HEADER
 
-#ifndef KOKKOS_SERIAL_MDRANGEPOLICY_HPP_
-#define KOKKOS_SERIAL_MDRANGEPOLICY_HPP_
+#ifndef KOKKOS_NUL_MDRANGEPOLICY_HPP_
+#define KOKKOS_NUL_MDRANGEPOLICY_HPP_
 
 #include <KokkosExp_MDRangePolicy.hpp>
 
@@ -24,7 +24,7 @@ namespace Impl {
 
 // Settings for TeamMDRangePolicy
 template <typename Rank, TeamMDRangeThreadAndVector ThreadAndVector>
-struct ThreadAndVectorNestLevel<Rank, Serial, ThreadAndVector>
+struct ThreadAndVectorNestLevel<Rank, Nul, ThreadAndVector>
     : HostBasedNestLevel<Rank, ThreadAndVector> {};
 
 }  // namespace Impl

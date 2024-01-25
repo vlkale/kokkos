@@ -61,7 +61,8 @@ NulInternal& NulInternal::singleton() {
 // Resize thread team data scratch memory
 void NulInternal::resize_thread_team_data(size_t pool_reduce_bytes,
                                              size_t team_reduce_bytes,
-                                             size_t team_shared_bytes)
+                                             size_t team_shared_bytes, 
+					     size_t thread_local_bytes)
 					    
   {
 
