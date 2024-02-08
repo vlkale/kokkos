@@ -610,6 +610,8 @@ void initialize(const std::string& profileLibrary) {
 
     Experimental::ToolProgrammingInterface actions;
     actions.fence = &Experimental::Impl::tool_invoked_fence;
+   
+    actions.fence(0);
 
     Experimental::invoke_kokkosp_callback(
         Experimental::MayRequireGlobalFencing::No,
