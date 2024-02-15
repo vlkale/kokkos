@@ -22,8 +22,8 @@
 static_assert(false,
               "Including non-public Kokkos header files is not allowed.");
 #endif
-#ifndef KOKKOS_SERIAL_HPP
-#define KOKKOS_SERIAL_HPP
+// #ifndef KOKKOS_NUL_HPP
+// #define KOKKOS_NUL_HPP
 
 #include <Kokkos_Macros.hpp>
 #if defined(KOKKOS_ENABLE_SERIAL)
