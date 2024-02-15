@@ -63,9 +63,9 @@
 namespace Kokkos {
 namespace Impl {
 
-bool SerialInternal::is_initialized() { return m_is_initialized; }
+bool NullInternal::is_initialized() { return m_is_initialized; }
 
-void SerialInternal::initialize() {
+void NullInternal::initialize() {
   if (is_initialized()) return;
 
   Impl::SharedAllocationRecord<void, void>::tracking_enable(); 
@@ -107,72 +107,12 @@ void SerialInternal::resize_thread_team_data(size_t pool_reduce_bytes,
                                              size_t team_reduce_bytes,
                                              size_t team_shared_bytes,
                                              size_t thread_local_bytes) {
-  if (pool_reduce_bytes < 512) pool_reduce_bytes = 512;
-  if (team_reduce_bytes < 512) team_reduce_bytes = 512;
-
-  const size_t old_pool_reduce  = m_thread_team_data.pool_reduce_bytes();
-  const size_t old_team_reduce  = m_thread_team_data.team_reduce_bytes();
-  const size_t old_team_shared  = m_thread_team_data.team_shared_bytes();
-  const size_t old_thread_local = m_thread_team_data.thread_local_bytes();
-  const size_t old_alloc_bytes  = m_thread_team_data.scratch_bytes();
-
-  // Allocate if any of the old allocation is tool small:
-
-  const bool allocate = (old_pool_reduce < pool_reduce_bytes) ||
-                        (old_team_reduce < team_reduce_bytes) ||
-                        (old_team_shared < team_shared_bytes) ||
-                        (old_thread_local < thread_local_bytes);
-
-  if (allocate) {
-    Kokkos::HostSpace space;
-
-    if (old_alloc_bytes) {
-      m_thread_team_data.disband_team();
-      m_thread_team_data.disband_pool();
-
-      space.deallocate("Kokkos::NULL::scratch_mem",
-                       m_thread_team_data.scratch_buffer(),
-                       m_thread_team_data.scratch_bytes());
-    }
-
-    if (pool_reduce_bytes < old_pool_reduce) {
-      pool_reduce_bytes = old_pool_reduce;
-    }
-    if (team_reduce_bytes < old_team_reduce) {
-      team_reduce_bytes = old_team_reduce;
-    }
-    if (team_shared_bytes < old_team_shared) {
-      team_shared_bytes = old_team_shared;
-    }
-    if (thread_local_bytes < old_thread_local) {
-      thread_local_bytes = old_thread_local;
-    }
-
-    const size_t alloc_bytes =
-        HostThreadTeamData::scratch_size(pool_reduce_bytes, team_reduce_bytes,
-                                         team_shared_bytes, thread_local_bytes);
-
-    void* ptr = nullptr;
-    try {
-      ptr = space.allocate("Kokkos::Serial::scratch_mem", alloc_bytes);
-    } catch (Kokkos::Experimental::RawMemoryAllocationFailure const& failure) {
-      // For now, just rethrow the error message the existing way
-      Kokkos::Impl::throw_runtime_exception(failure.get_error_message());
-    }
-
-    m_thread_team_data.scratch_assign(static_cast<char*>(ptr), alloc_bytes,
-                                      pool_reduce_bytes, team_reduce_bytes,
-                                      team_shared_bytes, thread_local_bytes);
-
-    HostThreadTeamData* pool[1] = {&m_thread_team_data};
-
-    m_thread_team_data.organize_pool(pool, 1);
-    m_thread_team_data.organize_team(1);
+ 
   }
-}
+ 
 }  // namespace Impl
 
-Serial::Serial()
+Serial::Null()
 #ifdef KOKKOS_IMPL_WORKAROUND_ICE_IN_TRILINOS_WITH_OLD_INTEL_COMPILERS
     : m_space_instance(&Impl::SerialInternal::singleton()) {
 }
@@ -182,7 +122,7 @@ Serial::Serial()
 }
 #endif
 
-void Serial::print_configuration(std::ostream& os, bool /*verbose*/) const {
+void Null::print_configuration(std::ostream& os, bool /*verbose*/) const {
   os << "Host Serial Execution Space:\n";
   os << "  KOKKOS_ENABLE_SERIAL: yes\n";
 
@@ -205,7 +145,7 @@ void Serial::impl_initialize(InitializationSettings const&) {
 
 void Serial::impl_finalize() { }
 
-const char* Serial::name() { return "NULL"; }
+const char* Null::name() { return "NULL"; }
 
 namespace Impl {
 
