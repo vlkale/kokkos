@@ -23,7 +23,7 @@
 
 #include <Kokkos_Core.hpp>
 
-#include <Serial/Kokkos_Serial_Task.hpp>
+#include <Nullified/Kokkos_Nul_Task.hpp>
 #include <impl/Kokkos_TaskQueue_impl.hpp>
 
 //----------------------------------------------------------------------------
@@ -32,7 +32,7 @@
 namespace Kokkos {
 namespace Impl {
 
-template class TaskQueue<Kokkos::Serial, typename Kokkos::Serial::memory_space>;
+template class TaskQueue<Kokkos::Nul, typename Kokkos::Nul::memory_space>;
 
 }
 }  // namespace Kokkos
