@@ -14,15 +14,15 @@
 //
 //@HEADER
 
-#ifndef KOKKOS_IMPL_SERIAL_TASK_HPP
-#define KOKKOS_IMPL_SERIAL_TASK_HPP
+#ifndef KOKKOS_IMPL_NUL_TASK_HPP
+#define KOKKOS_IMPL_NUL_TASK_HPP
 
 #include <Kokkos_Macros.hpp>
 #if defined(KOKKOS_ENABLE_TASKDAG)
 
 #include <Kokkos_TaskScheduler_fwd.hpp>
 
-#include <Serial/Kokkos_Serial.hpp>
+#include <Nullified/Kokkos_Nul.hpp>
 #include <impl/Kokkos_HostThreadTeam.hpp>
 #include <impl/Kokkos_TaskQueue.hpp>
 
@@ -33,22 +33,22 @@ namespace Kokkos {
 namespace Impl {
 
 template <class QueueType>
-class TaskQueueSpecialization<SimpleTaskScheduler<Kokkos::Serial, QueueType>> {
+class TaskQueueSpecialization<SimpleTaskScheduler<Kokkos::Nul, QueueType>> {
  public:
   // Note: Scheduler may be an incomplete type at class scope (but not inside
   // of the methods, obviously)
 
-  using execution_space = Kokkos::Serial;
+  using execution_space = Kokkos::Nul;
   using memory_space    = Kokkos::HostSpace;
-  using scheduler_type  = SimpleTaskScheduler<Kokkos::Serial, QueueType>;
+  using scheduler_type  = SimpleTaskScheduler<Kokkos::Nul, QueueType>;
   using member_type =
-      TaskTeamMemberAdapter<HostThreadTeamMember<Kokkos::Serial>,
+      TaskTeamMemberAdapter<HostThreadTeamMember<Kokkos::Nul>,
                             scheduler_type>;
 
   static void execute(scheduler_type const& scheduler) {
     using task_base_type = typename scheduler_type::task_base_type;
 
-    auto const& serial_execution_space = scheduler.get_execution_space();
+    auto const& nul_execution_space = scheduler.get_execution_space();
 
     // Set default buffers
     serial_execution_space.impl_internal_space_instance()
@@ -58,7 +58,7 @@ class TaskQueueSpecialization<SimpleTaskScheduler<Kokkos::Serial, QueueType>> {
                                   0    /* thread local buffer */
         );
 
-    auto& self = serial_execution_space.impl_internal_space_instance()
+    auto& self = nul_execution_space.impl_internal_space_instance()
                      ->m_thread_team_data;
 
     auto& queue         = scheduler.queue();
@@ -109,7 +109,7 @@ class TaskQueueSpecializationConstrained<
   // Note: Scheduler may be an incomplete type at class scope (but not inside
   // of the methods, obviously)
 
-  using execution_space = Kokkos::Serial;
+  using execution_space = Kokkos::Nul;
   using memory_space    = Kokkos::HostSpace;
   using scheduler_type  = Scheduler;
   using member_type =
@@ -159,10 +159,10 @@ class TaskQueueSpecializationConstrained<
 
     task_base_type* const end = (task_base_type*)task_base_type::EndTag;
 
-    execution_space serial_execution_space;
+    execution_space null_execution_space;
 
     // Set default buffers
-    serial_execution_space.impl_internal_space_instance()
+    null_execution_space.impl_internal_space_instance()
         ->resize_thread_team_data(0,   /* global reduce buffer */
                                   512, /* team reduce buffer */
                                   0,   /* team shared buffer */
@@ -190,13 +190,13 @@ class TaskQueueSpecializationConstrained<
         // pop_ready_task resulted in lock == task->m_next
         // In the executing state
 
-        (*task->m_apply)(task, &exec);
+        // (*task->m_apply)(task, &exec);
 
         // If a respawn then re-enqueue otherwise the task is complete
         // and all tasks waiting on this task are updated.
         queue->complete(task);
       } else if (0 != queue->m_ready_count) {
-        Kokkos::abort("TaskQueue<Serial>::execute ERROR: ready_count");
+        Kokkos::abort("TaskQueue<Nul>::execute ERROR: ready_count");
       }
     }
   }
@@ -209,8 +209,8 @@ class TaskQueueSpecializationConstrained<
   }
 };
 
-extern template class TaskQueue<Kokkos::Serial,
-                                typename Kokkos::Serial::memory_space>;
+extern template class TaskQueue<Kokkos::Nul,
+                                typename Kokkos::Nul::memory_space>;
 
 }  // namespace Impl
 }  // namespace Kokkos
@@ -219,4 +219,4 @@ extern template class TaskQueue<Kokkos::Serial,
 //----------------------------------------------------------------------------
 
 #endif /* #if defined( KOKKOS_ENABLE_TASKDAG ) */
-#endif /* #ifndef KOKKOS_IMPL_SERIAL_TASK_HPP */
+#endif /* #ifndef KOKKOS_IMPL_NUL_TASK_HPP */
