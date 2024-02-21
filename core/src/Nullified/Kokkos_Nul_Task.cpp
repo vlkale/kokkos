@@ -38,5 +38,5 @@ template class TaskQueue<Kokkos::Nul, typename Kokkos::Nul::memory_space>;
 }  // namespace Kokkos
 
 #else
-void KOKKOS_CORE_SRC_IMPL_SERIAL_TASK_PREVENT_LINK_ERROR() {}
+void KOKKOS_CORE_SRC_IMPL_NUL_TASK_PREVENT_LINK_ERROR() {}
 #endif /* #if defined( KOKKOS_ENABLE_TASKDAG ) */
