@@ -14,8 +14,8 @@
 //
 //@HEADER
 
-#ifndef KOKKOS_SERIAL_UNIQUE_TOKEN_HPP
-#define KOKKOS_SERIAL_UNIQUE_TOKEN_HPP
+#ifndef KOKKOS_NUL_UNIQUE_TOKEN_HPP
+#define KOKKOS_NUL_UNIQUE_TOKEN_HPP
 
 #include <Kokkos_UniqueToken.hpp>
 
@@ -23,9 +23,9 @@ namespace Kokkos {
 namespace Experimental {
 
 template <>
-class UniqueToken<Serial, UniqueTokenScope::Instance> {
+class UniqueToken<Nul, UniqueTokenScope::Instance> {
  public:
-  using execution_space = Serial;
+  using execution_space = Nul;
   using size_type       = int;
 
   /// \brief create object size for concurrency on the given instance
@@ -52,9 +52,9 @@ class UniqueToken<Serial, UniqueTokenScope::Instance> {
 };
 
 template <>
-class UniqueToken<Serial, UniqueTokenScope::Global> {
+class UniqueToken<Nul, UniqueTokenScope::Global> {
  public:
-  using execution_space = Serial;
+  using execution_space = Nul;
   using size_type       = int;
 
   /// \brief create object size for concurrency on the given instance
