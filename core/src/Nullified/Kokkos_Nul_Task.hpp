@@ -68,21 +68,6 @@ class TaskQueueSpecialization<SimpleTaskScheduler<Kokkos::Nul, QueueType>> {
 
     auto current_task = OptionalRef<task_base_type>(nullptr);
 
-    while (!queue.is_done()) {
-      // Each team lead attempts to acquire either a thread team task
-      // or a single thread task for the team.
-
-      // pop a task off
-      current_task = queue.pop_ready_task(team_scheduler.team_scheduler_info());
-
-      // run the task
-      if (current_task) {
-        current_task->as_runnable_task().run(member);
-        // Respawns are handled in the complete function
-        queue.complete((*std::move(current_task)).as_runnable_task(),
-                       team_scheduler.team_scheduler_info());
-      }
-    }
   }
 
   static constexpr uint32_t get_max_team_count(
@@ -134,7 +119,7 @@ class TaskQueueSpecializationConstrained<
 
     task_base_type* const end = (task_base_type*)task_base_type::EndTag;
 
-    execution_space null_execution_space;
+    execution_space nul_execution_space;
 
     // Set default buffers
     nul_execution_space.impl_internal_space_instance()
