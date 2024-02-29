@@ -51,7 +51,7 @@ class TaskQueueSpecialization<SimpleTaskScheduler<Kokkos::Nul, QueueType>> {
     auto const& nul_execution_space = scheduler.get_execution_space();
 
     // Set default buffers
-    serial_execution_space.impl_internal_space_instance()
+    nul_execution_space.impl_internal_space_instance()
         ->resize_thread_team_data(0,   /* global reduce buffer */
                                   512, /* team reduce buffer */
                                   0,   /* team shared buffer */
@@ -113,7 +113,7 @@ class TaskQueueSpecializationConstrained<
   using memory_space    = Kokkos::HostSpace;
   using scheduler_type  = Scheduler;
   using member_type =
-      TaskTeamMemberAdapter<HostThreadTeamMember<Kokkos::Serial>,
+      TaskTeamMemberAdapter<HostThreadTeamMember<Kokkos::Nullified>,
                             scheduler_type>;
 
   static void iff_single_thread_recursive_execute(
@@ -123,34 +123,9 @@ class TaskQueueSpecializationConstrained<
 
     task_base_type* const end = (task_base_type*)task_base_type::EndTag;
 
-    execution_space serial_execution_space;
-    auto& data = serial_execution_space.impl_internal_space_instance()
+    execution_space nul_execution_space;
+    auto& data = nul_execution_space.impl_internal_space_instance()
                      ->m_thread_team_data;
-
-    member_type exec(scheduler, data);
-
-    // Loop until no runnable task
-
-    task_base_type* task = end;
-
-    auto* const queue = scheduler.m_queue;
-
-    do {
-      task = end;
-
-      for (int i = 0; i < queue_type::NumQueue && end == task; ++i) {
-        for (int j = 0; j < 2 && end == task; ++j) {
-          task = queue_type::pop_ready_task(&queue->m_ready[i][j]);
-        }
-      }
-
-      if (end == task) break;
-
-      (*task->m_apply)(task, &exec);
-
-      queue->complete(task);
-
-    } while (1);
   }
 
   static void execute(scheduler_type const& scheduler) {
@@ -162,41 +137,13 @@ class TaskQueueSpecializationConstrained<
     execution_space null_execution_space;
 
     // Set default buffers
-    null_execution_space.impl_internal_space_instance()
+    nul_execution_space.impl_internal_space_instance()
         ->resize_thread_team_data(0,   /* global reduce buffer */
                                   512, /* team reduce buffer */
                                   0,   /* team shared buffer */
                                   0    /* thread local buffer */
         );
 
-    auto* const queue = scheduler.m_queue;
-
-    auto& data = serial_execution_space.impl_internal_space_instance()
-                     ->m_thread_team_data;
-
-    member_type exec(scheduler, data);
-
-    // Loop until all queues are empty
-    while (0 < queue->m_ready_count) {
-      task_base_type* task = end;
-
-      for (int i = 0; i < queue_type::NumQueue && end == task; ++i) {
-        for (int j = 0; j < 2 && end == task; ++j) {
-          task = queue_type::pop_ready_task(&queue->m_ready[i][j]);
-        }
-      }
-
-      if (end != task) {
-        // pop_ready_task resulted in lock == task->m_next
-        // In the executing state
-
-        // (*task->m_apply)(task, &exec);
-
-        // If a respawn then re-enqueue otherwise the task is complete
-        // and all tasks waiting on this task are updated.
-        queue->complete(task);
-      } else if (0 != queue->m_ready_count) {
-        Kokkos::abort("TaskQueue<Nul>::execute ERROR: ready_count");
       }
     }
   }
