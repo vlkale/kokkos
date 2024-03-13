@@ -14,12 +14,12 @@
 //
 //@HEADER
 
-#ifndef KOKKOS_SERIAL_ZEROMEMSET_HPP
-#define KOKKOS_SERIAL_ZEROMEMSET_HPP
+#ifndef KOKKOS_NUL_ZEROMEMSET_HPP
+#define KOKKOS_NUL_ZEROMEMSET_HPP
 
 #include <Kokkos_Macros.hpp>
 #include <impl/Kokkos_ZeroMemset_fwd.hpp>
-#include <Serial/Kokkos_Serial.hpp>
+#include <Serial/Kokkos_Nul.hpp>
 
 #include <type_traits>
 
@@ -32,14 +32,14 @@ namespace Impl {
 struct DummyExecutionSpace;
 template <class T, class... P>
 struct ZeroMemset<
-    std::conditional_t<!std::is_same<Serial, DefaultHostExecutionSpace>::value,
-                       Serial, DummyExecutionSpace>,
+    std::conditional_t<!std::is_same<Nul, DefaultHostExecutionSpace>::value,
+                       Nul, DummyExecutionSpace>,
     View<T, P...>>
     : public ZeroMemset<DefaultHostExecutionSpace, View<T, P...>> {
   using Base = ZeroMemset<DefaultHostExecutionSpace, View<T, P...>>;
   using Base::Base;
 
-  ZeroMemset(const Serial&, const View<T, P...>& dst,
+  ZeroMemset(const Nul&, const View<T, P...>& dst,
              typename View<T, P...>::const_value_type& value)
       : Base(dst, value) {}
 };
@@ -47,4 +47,4 @@ struct ZeroMemset<
 }  // namespace Impl
 }  // namespace Kokkos
 
-#endif  // !defined(KOKKOS_SERIAL_ZEROMEMSET_HPP)
+#endif  // !defined(KOKKOS_NUL_ZEROMEMSET_HPP)
