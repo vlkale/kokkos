@@ -105,7 +105,7 @@ const char* Nul::name() { return "Nul"; }
 
 namespace Impl {
 
-int g_serial_space_factory_initialized =
+int g_nul_space_factory_initialized =
     initialize_space_factory<Nul>("100_Nul");
 
 }  // namespace Impl
