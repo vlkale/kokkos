@@ -40,13 +40,12 @@ bool NulInternal::is_initialized() { return m_is_initialized; }
 void NulInternal::initialize() {
   if (is_initialized()) return;
 
-  // Impl::SharedAllocationRecord<void, void>::tracking_enable();
+  Impl::SharedAllocationRecord<void, void>::tracking_enable();
 
   m_is_initialized = true;
 }
 
 void NulInternal::finalize() {
-
   m_is_initialized = false;
 }
 
