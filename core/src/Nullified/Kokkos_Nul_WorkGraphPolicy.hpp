@@ -14,15 +14,15 @@
 //
 //@HEADER
 
-#ifndef KOKKOS_SERIAL_WORKGRAPHPOLICY_HPP
-#define KOKKOS_SERIAL_WORKGRAPHPOLICY_HPP
+#ifndef KOKKOS_NUL_WORKGRAPHPOLICY_HPP
+#define KOKKOS_NUL_WORKGRAPHPOLICY_HPP
 
 namespace Kokkos {
 namespace Impl {
 
 template <class FunctorType, class... Traits>
 class ParallelFor<FunctorType, Kokkos::WorkGraphPolicy<Traits...>,
-                  Kokkos::Serial> {
+                  Kokkos::Nul> {
  private:
   using Policy = Kokkos::WorkGraphPolicy<Traits...>;
 
@@ -63,4 +63,4 @@ class ParallelFor<FunctorType, Kokkos::WorkGraphPolicy<Traits...>,
 }  // namespace Impl
 }  // namespace Kokkos
 
-#endif /* #define KOKKOS_SERIAL_WORKGRAPHPOLICY_HPP */
+#endif /* #define KOKKOS_NUL_WORKGRAPHPOLICY_HPP */
