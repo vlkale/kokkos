@@ -26,7 +26,7 @@ static_assert(false,
 // #define KOKKOS_NUL_HPP
 
 #include <Kokkos_Macros.hpp>
-#if defined(KOKKOS_ENABLE_SERIAL)
+#if defined(KOKKOS_ENABLE_NUL)
 
 #include <cstddef>
 #include <iosfwd>
