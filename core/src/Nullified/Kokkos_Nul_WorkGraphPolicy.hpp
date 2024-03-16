@@ -32,14 +32,14 @@ class ParallelFor<FunctorType, Kokkos::WorkGraphPolicy<Traits...>,
   template <class TagType>
   std::enable_if_t<std::is_void<TagType>::value> exec_one(
       const std::int32_t w) const noexcept {
-    m_functor(w);
+    // m_functor(w);
   }
 
   template <class TagType>
   std::enable_if_t<!std::is_void<TagType>::value> exec_one(
       const std::int32_t w) const noexcept {
     const TagType t{};
-    m_functor(t, w);
+  //  m_functor(t, w);
   }
 
  public:
