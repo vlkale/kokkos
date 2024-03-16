@@ -19,7 +19,7 @@
 
 #include <Kokkos_Macros.hpp>
 #include <impl/Kokkos_ZeroMemset_fwd.hpp>
-#include <Serial/Kokkos_Nul.hpp>
+#include <Nullified/Kokkos_Nul.hpp>
 
 #include <type_traits>
 
