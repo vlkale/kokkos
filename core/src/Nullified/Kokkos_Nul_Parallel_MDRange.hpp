@@ -14,8 +14,8 @@
 //
 //@HEADER
 
-#ifndef KOKKOS_SERIAL_PARALLEL_MDRANGE_HPP
-#define KOKKOS_SERIAL_PARALLEL_MDRANGE_HPP
+#ifndef KOKKOS_NUL_PARALLEL_MDRANGE_HPP
+#define KOKKOS_NUL_PARALLEL_MDRANGE_HPP
 
 #include <Kokkos_Parallel.hpp>
 #include <KokkosExp_MDRangePolicy.hpp>
@@ -25,7 +25,7 @@ namespace Impl {
 
 template <class FunctorType, class... Traits>
 class ParallelFor<FunctorType, Kokkos::MDRangePolicy<Traits...>,
-                  Kokkos::Serial> {
+                  Kokkos::Nul> {
  private:
   using MDRangePolicy = Kokkos::MDRangePolicy<Traits...>;
   using Policy        = typename MDRangePolicy::impl_range_policy;
@@ -38,7 +38,7 @@ class ParallelFor<FunctorType, Kokkos::MDRangePolicy<Traits...>,
   void exec() const {
     const typename Policy::member_type e = m_iter.m_rp.m_num_tiles;
     for (typename Policy::member_type i = 0; i < e; ++i) {
-      m_iter(i);
+      // m_iter(i);
     }
   }
 
@@ -60,7 +60,7 @@ class ParallelFor<FunctorType, Kokkos::MDRangePolicy<Traits...>,
 
 template <class CombinedFunctorReducerType, class... Traits>
 class ParallelReduce<CombinedFunctorReducerType,
-                     Kokkos::MDRangePolicy<Traits...>, Kokkos::Serial> {
+                     Kokkos::MDRangePolicy<Traits...>, Kokkos::Nul> {
  private:
   using MDRangePolicy = Kokkos::MDRangePolicy<Traits...>;
   using Policy        = typename MDRangePolicy::impl_range_policy;
@@ -79,9 +79,9 @@ class ParallelReduce<CombinedFunctorReducerType,
   const pointer_type m_result_ptr;
 
   inline void exec(reference_type update) const {
-    const typename Policy::member_type e = m_iter.m_rp.m_num_tiles;
+  const typename Policy::member_type e = m_iter.m_rp.m_num_tiles;
     for (typename Policy::member_type i = 0; i < e; ++i) {
-      m_iter(i, update);
+     //  m_iter(i, update);
     }
   }
 
@@ -116,12 +116,11 @@ class ParallelReduce<CombinedFunctorReducerType,
             ? m_result_ptr
             : pointer_type(
                   internal_instance->m_thread_team_data.pool_reduce_local());
-
-    reference_type update = reducer.init(ptr);
-
-    this->exec(update);
-
-    reducer.final(ptr);
+    
+   // reference_type update = reducer.init(ptr);
+    
+   // this->exec(update); 
+ //  reducer.final(ptr);
   }
 
   template <class ViewType>
@@ -131,12 +130,12 @@ class ParallelReduce<CombinedFunctorReducerType,
       : m_iter(arg_policy, arg_functor_reducer),
         m_result_ptr(arg_result_view.data()) {
     static_assert(Kokkos::is_view<ViewType>::value,
-                  "Kokkos::Serial reduce result must be a View");
+                  "Kokkos::Nul reduce result must be a View");
 
     static_assert(
         Kokkos::Impl::MemorySpaceAccess<typename ViewType::memory_space,
                                         Kokkos::HostSpace>::accessible,
-        "Kokkos::Serial reduce result must be a View accessible from "
+        "Kokkos::Nul reduce result must be a View accessible from "
         "HostSpace");
   }
 };
