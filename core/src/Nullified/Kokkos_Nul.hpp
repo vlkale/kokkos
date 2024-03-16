@@ -130,7 +130,7 @@ class Nul {
   /// method does not return until all dispatched functors on this
   /// device have completed.
   static void impl_static_fence(const std::string& name) {
-    Kokkos::Tools::Experimental::Impl::profile_fence_event<Kokkos::Serial>(
+    Kokkos::Tools::Experimental::Impl::profile_fence_event<Kokkos::Nul>(
         name,
         Kokkos::Tools::Experimental::SpecialSynchronizationCases::
             GlobalDeviceSynchronization,
@@ -140,7 +140,7 @@ class Nul {
 
   void fence(const std::string& name =
                  "Kokkos::Nul::fence: Unnamed Instance Fence") const {
-    Kokkos::Tools::Experimental::Impl::profile_fence_event<Kokkos::Serial>(
+    Kokkos::Tools::Experimental::Impl::profile_fence_event<Kokkos::Nul>(
         name, Kokkos::Tools::Experimental::Impl::DirectFenceIDHandle{1},
         []() {});  // TODO: correct device ID
     Kokkos::memory_fence();
@@ -187,7 +187,7 @@ class Nul {
 
  private:
   Kokkos::Impl::HostSharedPtr<Impl::NulInternal> m_space_instance;
-  friend bool operator==(Serial const& lhs, Serial const& rhs) {
+  friend bool operator==(Nul const& lhs, Nul const& rhs) {
     return lhs.impl_internal_space_instance() ==
            rhs.impl_internal_space_instance();
   }
@@ -202,7 +202,7 @@ namespace Experimental {
 template <>
 struct DeviceTypeTraits<Nul> {
   static constexpr DeviceType id = DeviceType::Nul;
-  static int device_id(const Serial&) { return 0; }
+  static int device_id(const Nul&) { return 0; }
 };
 }  // namespace Experimental
 }  // namespace Tools
@@ -215,8 +215,8 @@ namespace Kokkos {
 namespace Impl {
 
 template <>
-struct MemorySpaceAccess<Kokkos::Serial::memory_space,
-                         Kokkos::Serial::scratch_memory_space> {
+struct MemorySpaceAccess<Kokkos::Nul::memory_space,
+                         Kokkos::Nul::scratch_memory_space> {
   enum : bool { assignable = false };
   enum : bool { accessible = true };
   enum : bool { deepcopy = false };
@@ -228,7 +228,7 @@ struct MemorySpaceAccess<Kokkos::Serial::memory_space,
 namespace Kokkos::Experimental {
 
 template <class... Args>
-std::vector<Serial> partition_space(const Serial&, Args...) {
+std::vector<Nul> partition_space(const Nul&, Args...) {
   static_assert(
       (... && std::is_arithmetic_v<Args>),
       "Kokkos Error: partitioning arguments must be integers or floats");
@@ -264,4 +264,4 @@ std::vector<Nul> partition_space(const Nul&,
 #include <Serial/Kokkos_Nul_UniqueToken.hpp>
 
 #endif  // defined( KOKKOS_ENABLE_NUL )
-#endif  /* #define KOKKOS_SERIAL_HPP */
+#endif  /* #define KOKKOS_NUL_HPP */
