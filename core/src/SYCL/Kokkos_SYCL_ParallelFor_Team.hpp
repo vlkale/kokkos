@@ -22,15 +22,16 @@
 #include <SYCL/Kokkos_SYCL_Team.hpp>
 #include <SYCL/Kokkos_SYCL_TeamPolicy.hpp>
 
+#include <sstream>
 #include <vector>
 
 template <typename FunctorType, typename... Properties>
 class Kokkos::Impl::ParallelFor<FunctorType, Kokkos::TeamPolicy<Properties...>,
-                                Kokkos::Experimental::SYCL> {
+                                Kokkos::SYCL> {
  public:
   using Policy       = TeamPolicy<Properties...>;
   using functor_type = FunctorType;
-  using size_type    = ::Kokkos::Experimental::SYCL::size_type;
+  using size_type    = ::Kokkos::SYCL::size_type;
 
  private:
   using member_type   = typename Policy::member_type;
@@ -51,12 +52,12 @@ class Kokkos::Impl::ParallelFor<FunctorType, Kokkos::TeamPolicy<Properties...>,
                                  const FunctorWrapper& functor_wrapper,
                                  const sycl::event& memcpy_event) const {
     // Convenience references
-    const Kokkos::Experimental::SYCL& space = m_policy.space();
-    sycl::queue& q                          = space.sycl_queue();
+    const Kokkos::SYCL& space = m_policy.space();
+    sycl::queue& q            = space.sycl_queue();
 
     desul::ensure_sycl_lock_arrays_on_device(q);
 
-    auto parallel_for_event = q.submit([&](sycl::handler& cgh) {
+    auto cgh_lambda = [&](sycl::handler& cgh) {
       // FIXME_SYCL accessors seem to need a size greater than zero at least for
       // host queues
       sycl::local_accessor<char, 1> team_scratch_memory_L0(
@@ -108,11 +109,22 @@ class Kokkos::Impl::ParallelFor<FunctorType, Kokkos::TeamPolicy<Properties...>,
               sycl::range<2>(m_team_size, m_league_size * final_vector_size),
               sycl::range<2>(m_team_size, final_vector_size)),
           lambda);
-    });
-#ifndef KOKKOS_IMPL_SYCL_USE_IN_ORDER_QUEUES
-    q.ext_oneapi_submit_barrier(std::vector<sycl::event>{parallel_for_event});
+    };
+
+#ifdef SYCL_EXT_ONEAPI_GRAPH
+    if constexpr (Policy::is_graph_kernel::value) {
+      sycl_attach_kernel_to_node(*this, cgh_lambda);
+      return {};
+    } else
 #endif
-    return parallel_for_event;
+    {
+      auto parallel_for_event = q.submit(cgh_lambda);
+
+#ifndef KOKKOS_IMPL_SYCL_USE_IN_ORDER_QUEUES
+      q.ext_oneapi_submit_barrier(std::vector<sycl::event>{parallel_for_event});
+#endif
+      return parallel_for_event;
+    }
   }
 
  public:
@@ -134,11 +146,11 @@ class Kokkos::Impl::ParallelFor<FunctorType, Kokkos::TeamPolicy<Properties...>,
             scratch_pool_id,
             static_cast<ptrdiff_t>(m_scratch_size[1]) * m_league_size));
 
-    Kokkos::Experimental::Impl::SYCLInternal::IndirectKernelMem&
-        indirectKernelMem = instance.get_indirect_kernel_mem();
+    Kokkos::Impl::SYCLInternal::IndirectKernelMem& indirectKernelMem =
+        instance.get_indirect_kernel_mem();
 
-    auto functor_wrapper = Experimental::Impl::make_sycl_function_wrapper(
-        m_functor, indirectKernelMem);
+    auto functor_wrapper =
+        Impl::make_sycl_function_wrapper(m_functor, indirectKernelMem);
 
     sycl::event event = sycl_direct_launch(global_scratch_ptr, functor_wrapper,
                                            functor_wrapper.get_copy_event());

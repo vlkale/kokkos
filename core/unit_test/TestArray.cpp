@@ -15,8 +15,18 @@
 //@HEADER
 
 #include <Kokkos_Array.hpp>
+#include <Kokkos_DetectionIdiom.hpp>
 
 namespace {
+
+// nvcc errors on variables only used in static_asserts
+// Passing those variables to this function should eliminate the warning
+template <typename... Ts>
+KOKKOS_FUNCTION constexpr void maybe_unused(Ts&&...) {}
+
+template <typename T, typename U = T>
+using equality_comparable =
+    decltype(std::declval<T const&>() == std::declval<U const&>());
 
 KOKKOS_FUNCTION constexpr bool test_array() {
   constexpr Kokkos::Array<int, 3> a{{1, 2}};
@@ -49,17 +59,6 @@ KOKKOS_FUNCTION constexpr bool test_array_structured_binding_support() {
 
 static_assert(test_array_structured_binding_support());
 
-template <typename L, typename R>
-KOKKOS_FUNCTION constexpr bool is_equal(L const& l, R const& r) {
-  if (std::size(l) != std::size(r)) return false;
-
-  for (size_t i = 0; i != std::size(l); ++i) {
-    if (l[i] != r[i]) return false;
-  }
-
-  return true;
-}
-
 // Disable ctad test for intel versions < 2021, see issue #6702
 #if !defined(KOKKOS_COMPILER_INTEL) || KOKKOS_COMPILER_INTEL >= 2021
 KOKKOS_FUNCTION constexpr bool test_array_ctad() {
@@ -67,7 +66,7 @@ KOKKOS_FUNCTION constexpr bool test_array_ctad() {
   constexpr Kokkos::Array a{1, 2, 3, 5, x};
   constexpr Kokkos::Array<int, 5> b{1, 2, 3, 5, x};
 
-  return std::is_same_v<decltype(a), decltype(b)> && is_equal(a, b);
+  return std::is_same_v<decltype(a), decltype(b)> && a == b;
 }
 
 static_assert(test_array_ctad());
@@ -132,7 +131,8 @@ struct MyInt {
   int i;
 
  private:
-  friend constexpr void kokkos_swap(MyInt& lhs, MyInt& rhs) noexcept {
+  friend constexpr KOKKOS_FUNCTION void kokkos_swap(MyInt& lhs,
+                                                    MyInt& rhs) noexcept {
     lhs.i = 255;
     rhs.i = 127;
   }
@@ -159,5 +159,87 @@ constexpr bool test_array_specialization_kokkos_swap() {
 }
 
 static_assert(test_array_specialization_kokkos_swap());
+
+constexpr bool test_to_array() {
+  // copies a string literal
+  [[maybe_unused]] auto a1 = Kokkos::to_array("foo");
+  static_assert(a1.size() == 4);
+  maybe_unused(a1);
+
+  // deduces both element type and length
+  [[maybe_unused]] auto a2 = Kokkos::to_array({0, 2, 1, 3});
+  static_assert(std::is_same_v<decltype(a2), Kokkos::Array<int, 4>>);
+  maybe_unused(a2);
+
+// gcc8, icc, and nvcc 11.3 do not support the implicit conversion
+#if !(defined(KOKKOS_COMPILER_GNU) && (KOKKOS_COMPILER_GNU < 910)) &&      \
+    !(defined(KOKKOS_COMPILER_INTEL) && (KOKKOS_COMPILER_INTEL < 2021)) && \
+    !(defined(KOKKOS_COMPILER_NVCC) && (KOKKOS_COMPILER_NVCC < 1140))
+  // deduces length with element type specified
+  // implicit conversion happens
+  [[maybe_unused]] auto a3 = Kokkos::to_array<long>({0, 1, 3});
+  static_assert(std::is_same_v<decltype(a3), Kokkos::Array<long, 3>>);
+  maybe_unused(a3);
+#endif
+
+  return true;
+}
+
+static_assert(test_to_array());
+
+constexpr bool test_array_equality_comparable() {
+  using C0 = Kokkos::Array<char, 0>;
+  using C2 = Kokkos::Array<char, 2>;
+  using C3 = Kokkos::Array<char, 3>;
+  using I0 = Kokkos::Array<int, 0>;
+  using I2 = Kokkos::Array<int, 2>;
+  using I3 = Kokkos::Array<int, 3>;
+
+  static_assert(Kokkos::is_detected_v<equality_comparable, C0, C0>);
+  static_assert(!Kokkos::is_detected_v<equality_comparable, C0, C2>);
+  static_assert(!Kokkos::is_detected_v<equality_comparable, C0, C3>);
+  static_assert(!Kokkos::is_detected_v<equality_comparable, C0, I0>);
+  static_assert(!Kokkos::is_detected_v<equality_comparable, C0, I2>);
+  static_assert(!Kokkos::is_detected_v<equality_comparable, C0, I3>);
+
+  static_assert(!Kokkos::is_detected_v<equality_comparable, C2, C0>);
+  static_assert(Kokkos::is_detected_v<equality_comparable, C2, C2>);
+  static_assert(!Kokkos::is_detected_v<equality_comparable, C2, C3>);
+  static_assert(!Kokkos::is_detected_v<equality_comparable, C2, I0>);
+  static_assert(!Kokkos::is_detected_v<equality_comparable, C2, I2>);
+  static_assert(!Kokkos::is_detected_v<equality_comparable, C2, I3>);
+
+  static_assert(!Kokkos::is_detected_v<equality_comparable, C3, C0>);
+  static_assert(!Kokkos::is_detected_v<equality_comparable, C3, C2>);
+  static_assert(Kokkos::is_detected_v<equality_comparable, C3, C3>);
+  static_assert(!Kokkos::is_detected_v<equality_comparable, C3, I0>);
+  static_assert(!Kokkos::is_detected_v<equality_comparable, C3, I2>);
+  static_assert(!Kokkos::is_detected_v<equality_comparable, C3, I3>);
+
+  static_assert(!Kokkos::is_detected_v<equality_comparable, I0, C0>);
+  static_assert(!Kokkos::is_detected_v<equality_comparable, I0, C2>);
+  static_assert(!Kokkos::is_detected_v<equality_comparable, I0, C3>);
+  static_assert(Kokkos::is_detected_v<equality_comparable, I0, I0>);
+  static_assert(!Kokkos::is_detected_v<equality_comparable, I0, I2>);
+  static_assert(!Kokkos::is_detected_v<equality_comparable, I0, I3>);
+
+  static_assert(!Kokkos::is_detected_v<equality_comparable, I2, C0>);
+  static_assert(!Kokkos::is_detected_v<equality_comparable, I2, C2>);
+  static_assert(!Kokkos::is_detected_v<equality_comparable, I2, C3>);
+  static_assert(!Kokkos::is_detected_v<equality_comparable, I2, I0>);
+  static_assert(Kokkos::is_detected_v<equality_comparable, I2, I2>);
+  static_assert(!Kokkos::is_detected_v<equality_comparable, I2, I3>);
+
+  static_assert(!Kokkos::is_detected_v<equality_comparable, I3, C0>);
+  static_assert(!Kokkos::is_detected_v<equality_comparable, I3, C2>);
+  static_assert(!Kokkos::is_detected_v<equality_comparable, I3, C3>);
+  static_assert(!Kokkos::is_detected_v<equality_comparable, I3, I0>);
+  static_assert(!Kokkos::is_detected_v<equality_comparable, I3, I2>);
+  static_assert(Kokkos::is_detected_v<equality_comparable, I3, I3>);
+
+  return true;
+}
+
+static_assert(test_array_equality_comparable());
 
 }  // namespace
